@@ -29,7 +29,11 @@ type MitigationRuleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MitigationRule. Edit MitigationRule_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	ExternalHost string `json:"externalHost,omitempty"`
+	InternalHost string `json:"internalHost,omitempty"`
+	HPAUpperLimit int `json:"hpaUpperLimit,omitempty"`
+	ddApiKey string `json:"ddApiKey,omitempty"`
+	ddAppKey string `json:"ddAppKey,omitempty"`
 }
 
 // MitigationRuleStatus defines the observed state of MitigationRule
@@ -42,6 +46,7 @@ type MitigationRuleStatus struct {
 // +kubebuilder:subresource:status
 
 // MitigationRule is the Schema for the mitigationrules API
+// +kubebuilder:subresource:status
 type MitigationRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
