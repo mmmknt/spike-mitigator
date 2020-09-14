@@ -1,0 +1,66 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: mitigationrules.spike-mitigation.mmmknt.dev
+spec:
+  group: spike-mitigation.mmmknt.dev
+  names:
+    kind: MitigationRule
+    listKind: MitigationRuleList
+    plural: mitigationrules
+    singular: mitigationrule
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: MitigationRule is the Schema for the mitigationrules API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MitigationRuleSpec defines the desired state of MitigationRule
+          properties:
+            ddApiKey:
+              type: string
+            ddAppKey:
+              type: string
+            externalHost:
+              description: Foo is an example field of MitigationRule. Edit MitigationRule_types.go
+                to remove/update
+              type: string
+            hpaUpperLimit:
+              type: integer
+            internalHost:
+              type: string
+          type: object
+        status:
+          description: MitigationRuleStatus defines the observed state of MitigationRule
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
