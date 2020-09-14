@@ -1,0 +1,20 @@
+# permissions for end users to view mitigationrules.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mitigationrule-viewer-role
+rules:
+- apiGroups:
+  - spike-mitigation.mmmknt.dev
+  resources:
+  - mitigationrules
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - spike-mitigation.mmmknt.dev
+  resources:
+  - mitigationrules/status
+  verbs:
+  - get

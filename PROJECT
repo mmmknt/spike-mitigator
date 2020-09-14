@@ -1,0 +1,11 @@
+domain: mmmknt.dev
+layout: go.kubebuilder.io/v2
+projectName: temp
+repo: github.com/mmmknt/spike-mitigation-operator
+resources:
+- group: spike-mitigation
+  kind: MitigationRule
+  version: v1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

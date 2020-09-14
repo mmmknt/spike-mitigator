@@ -1,0 +1,7 @@
+apiVersion: spike-mitigation.mmmknt.dev/v1
+kind: MitigationRule
+metadata:
+  name: mitigationrule-sample
+spec:
+  # Add fields here
+  foo: bar
