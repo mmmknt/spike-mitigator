@@ -29,11 +29,12 @@ type MitigationRuleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MitigationRule. Edit MitigationRule_types.go to remove/update
-	ExternalHost string `json:"externalHost,omitempty"`
-	InternalHost string `json:"internalHost,omitempty"`
-	HPAUpperLimit int `json:"hpaUpperLimit,omitempty"`
-	ddApiKey string `json:"ddApiKey,omitempty"`
-	ddAppKey string `json:"ddAppKey,omitempty"`
+	ExternalHost          string `json:"externalHost,omitempty"`
+	InternalHost          string `json:"internalHost,omitempty"`
+	HPATriggerRate        int    `json:"hpaTriggerRate,omitempty"`
+	MitigationTriggerRate int    `json:"mitigationTriggerRate,omitempty"`
+	ddApiKey              string `json:"ddApiKey,omitempty"`
+	ddAppKey              string `json:"ddAppKey,omitempty"`
 }
 
 // MitigationRuleStatus defines the observed state of MitigationRule
