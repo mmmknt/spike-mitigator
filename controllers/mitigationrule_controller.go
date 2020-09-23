@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,12 +39,21 @@ type MitigationRuleReconciler struct {
 // +kubebuilder:rbac:groups=spike-mitigation.mmmknt.dev,resources=mitigationrules/status,verbs=get;update;patch
 
 func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("mitigationrule", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("mitigationrule", req.NamespacedName)
 
-	// your logic here
+	log.Info("start Reconcile")
+	mitigationRule := &spikemitigationv1.MitigationRule{}
+	if err := r.Get(ctx, req.NamespacedName, mitigationRule); err != nil {
+		log.Error(err, "unable to get mitigation rule")
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{}, nil
+	// debug
+	log.Info("succeed to get mitigation rule", "mitigation rule", mitigationRule)
+
+	// TODO make RequeueAfter to be able change per loop
+	return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 }
 
 func (r *MitigationRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {

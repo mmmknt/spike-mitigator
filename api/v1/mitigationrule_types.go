@@ -33,8 +33,8 @@ type MitigationRuleSpec struct {
 	InternalHost          string `json:"internalHost,omitempty"`
 	HPATriggerRate        int    `json:"hpaTriggerRate,omitempty"`
 	MitigationTriggerRate int    `json:"mitigationTriggerRate,omitempty"`
-	ddApiKey              string `json:"ddApiKey,omitempty"`
-	ddAppKey              string `json:"ddAppKey,omitempty"`
+	DDApiKey              string `json:"ddApiKey,omitempty"`
+	DDAppKey              string `json:"ddAppKey,omitempty"`
 }
 
 // MitigationRuleStatus defines the observed state of MitigationRule
