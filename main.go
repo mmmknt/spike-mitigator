@@ -20,10 +20,14 @@ import (
 	"flag"
 	"os"
 
+	"github.com/DataDog/datadog-api-client-go/api/v1/datadog"
+	istiocli "istio.io/client-go/pkg/clientset/versioned"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -67,10 +71,35 @@ func main() {
 		os.Exit(1)
 	}
 
+	restConfig, err := rest.InClusterConfig()
+	if err != nil {
+		setupLog.Error(err, "unable to get InClusterConfig")
+		os.Exit(1)
+	}
+	istioClientset, err := istiocli.NewForConfig(restConfig)
+	if err != nil {
+		setupLog.Error(err, "unable to create istio Clientset")
+		os.Exit(1)
+	}
+	kubeClientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		setupLog.Error(err, "unable to create kubernetes Clientset")
+		os.Exit(1)
+	}
+	ddConfig := datadog.NewConfiguration()
+	ddClient := datadog.NewAPIClient(ddConfig)
+
+	calculator := &controllers.MitigationCalculator{
+		KubernetesClientset: kubeClientset,
+		DDClient:            ddClient,
+	}
+
 	if err = (&controllers.MitigationRuleReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("MitigationRule"),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		IstioClientset: istioClientset,
+		Calculator:     calculator,
+		Log:            ctrl.Log.WithName("controllers").WithName("MitigationRule"),
+		Scheme:         mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MitigationRule")
 		os.Exit(1)
