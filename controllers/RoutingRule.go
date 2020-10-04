@@ -3,7 +3,7 @@ package controllers
 type Host string
 
 type RoutingRule struct {
-	RuleMap map[Host]*RoutingRate
+	RuleMap map[Host]*RoutingRate `json:",inline"`
 }
 
 func (rr *RoutingRule) Add(host Host, re *RoutingRate) {
@@ -17,13 +17,12 @@ func (rr *RoutingRule) GetRoutingRule(host Host) *RoutingRate {
 	return rr.RuleMap[host]
 }
 
-func (rr *RoutingRule) Equal(target RoutingRule) bool {
-	// TODO
-	return false
+func (rr *RoutingRule) Equal(target *RoutingRule) bool {
+	return rr == target
 }
 
 type RoutingRate struct {
-	InternalWeight int32
-	ExternalWeight int32
-	Version        string
+	InternalWeight int32  `json:"internalWeight"`
+	ExternalWeight int32  `json:"externalWeight"`
+	Version        string `json:"version"`
 }

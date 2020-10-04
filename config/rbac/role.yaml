@@ -7,6 +7,21 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - list
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - virtualservices
+  verbs:
+  - create
+  - delete
+  - list
+  - update
+- apiGroups:
   - spike-mitigation.mmmknt.dev
   resources:
   - mitigationrules
