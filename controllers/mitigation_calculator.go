@@ -114,8 +114,10 @@ func (c *MitigationCalculator) getMetrics(ctx context.Context, log logr.Logger, 
 
 func calculate(spec v1.MitigationRuleSpec, currentRule *RoutingRule, metrics *Metrics, maxCPUUtilizationPercentage int32) (*RoutingRule, error) {
 	if metrics == nil {
-		return &RoutingRule{RuleMap: map[Host]*RoutingRate{}}, nil
+		return currentRule, nil
 	}
+	// 1. calculate spike case, requests increase rapidly
+	// 2. calculate other case, usable resource decrease rapidly
 	maxHost := metrics.MaxHost
 	totalRequestCount := metrics.TotalRequestCount
 	rcMap := metrics.RequestCountMap
