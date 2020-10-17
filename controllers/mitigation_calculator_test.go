@@ -26,6 +26,25 @@ import (
 // 2-4. nop
 // 3. error cases
 
+func TestUnableGetMetrics(t *testing.T) {
+	spec := v1.MitigationRuleSpec{
+		HPATriggerRate:        60,
+		MitigationTriggerRate: 80,
+	}
+	rule := &RoutingRule{RuleMap: map[Host]*RoutingRate{
+		Host("test-domain-second"): {
+			InternalWeight: int32(50),
+			ExternalWeight: int32(50),
+			Version:        "some-version",
+		},
+	}}
+	maxCurrentCPUUtilizationPercentage := int32(100)
+
+	routingRule, err := calculate(spec, rule, nil, maxCurrentCPUUtilizationPercentage)
+	assert.NoError(t, err)
+	assert.Equal(t, rule, routingRule)
+}
+
 func TestFirstTimeOverMitigationTriggerRate(t *testing.T) {
 	spec := v1.MitigationRuleSpec{
 		HPATriggerRate:        60,
