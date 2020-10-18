@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -74,8 +74,6 @@ func (c *MitigationCalculator) getMetrics(ctx context.Context, log logr.Logger, 
 	log.Info("succeed to get metrics", "resp.Series", resp.Series)
 	// calculate total and max request count and host
 	totalCount := float64(0)
-	maxHost := ""
-	maxCount := float64(0)
 	rcMap := make(map[Host]float64)
 	for _, se := range *resp.Series {
 		log.Info("se", "se", se)
@@ -93,20 +91,17 @@ func (c *MitigationCalculator) getMetrics(ctx context.Context, log logr.Logger, 
 		}
 		scope := se.GetScope()
 		host := strings.TrimPrefix(scope, "http.host:")
-		if latestCount > maxCount {
-			maxHost = host
-			maxCount = latestCount
-		}
 		rcMap[Host(host)] = latestCount
 		totalCount += latestCount
 	}
 	var metrics *Metrics
-	if maxHost != "" {
+	if totalCount != 0 {
 		metrics = &Metrics{
-			MaxHost:           maxHost,
 			TotalRequestCount: totalCount,
 			RequestCountMap:   rcMap,
 		}
+	} else {
+		metrics = nil
 	}
 
 	return metrics, nil
@@ -116,52 +111,63 @@ func calculate(spec v1.MitigationRuleSpec, currentRule *RoutingRule, metrics *Me
 	if metrics == nil {
 		return currentRule, nil
 	}
-	// 1. calculate spike case, requests increase rapidly
-	// 2. calculate other case, usable resource decrease rapidly
-	maxHost := metrics.MaxHost
-	totalRequestCount := metrics.TotalRequestCount
-	rcMap := metrics.RequestCountMap
-	// TODO calculate latest routing rule
-	deltaPercentage := float64(maxCPUUtilizationPercentage) - float64(spec.MitigationTriggerRate+spec.HPATriggerRate)/2
-	externalRequestCount := float64(0)
-	for host, rate := range currentRule.RuleMap {
-		if rate.ExternalWeight != 0 {
-			// TODO calculate total request count
-			externalRequestCount += rcMap[host] * float64(rate.ExternalWeight) / float64(rate.InternalWeight)
+
+	receivableRequestCount := metrics.TotalRequestCount * (float64(spec.MitigationTriggerRate+spec.HPATriggerRate) / 2) / float64(maxCPUUtilizationPercentage)
+	allRequestCount := float64(0)
+	var allRequestCountSlice []RequestCount
+	for host, rc := range metrics.RequestCountMap {
+		count := rc
+		rr := currentRule.RuleMap[host]
+		if rr != nil {
+			count += count * float64(rr.ExternalWeight) / float64(rr.InternalWeight)
 		}
+		allRequestCountSlice = append(allRequestCountSlice, RequestCount{
+			Host:  host,
+			Count: count,
+		})
+		allRequestCount += count
 	}
-	externalRequestCount += deltaPercentage * totalRequestCount / 100
-	f := rcMap[Host(maxHost)]
-	maxrr := currentRule.GetRoutingRule(Host(maxHost))
-	if maxrr != nil {
-		f = f * float64(100/maxrr.InternalWeight)
-	}
-	iw := int32((f - externalRequestCount) * 100 / f)
-	if iw >= 100 {
-		iw = 100
-	}
-	ew := 100 - iw
-	//log.Info("calculated result", "maxHost", maxHost, "internalWeight", iw, "externalWeight", ew)
-	fmt.Printf("calculated result. maxHost: %v, internalWeight: %v, externalWeight: %v", maxHost, iw, ew)
+	sort.Slice(allRequestCountSlice, func(i, j int) bool {
+		return allRequestCountSlice[i].Count > allRequestCountSlice[j].Count
+	})
+
 	rr := &RoutingRule{RuleMap: map[Host]*RoutingRate{}}
-	if iw != 100 {
-		version := ""
-		if maxrr != nil {
-			version = maxrr.Version
+	dc := allRequestCount - receivableRequestCount
+	for _, rc := range allRequestCountSlice {
+		if dc <= 0 {
+			break
 		}
-		rr.RuleMap = map[Host]*RoutingRate{
-			Host(maxHost): {
-				InternalWeight: iw,
-				ExternalWeight: ew,
-				Version:        version,
-			},
+		count := rc.Count
+		externalCount := count
+		if dc < externalCount {
+			externalCount = dc
 		}
+		externalWeight := int32(externalCount / count * 100)
+		// When external weight is 100, we are not able to detect all request counts.
+		// So some request is needed to send internal.
+		if externalWeight == 100 {
+			externalWeight = 99
+			externalCount = count * float64(externalWeight) / 100
+		}
+		dc = dc - externalCount
+		rate := &RoutingRate{
+			InternalWeight: 100 - externalWeight,
+			ExternalWeight: externalWeight,
+		}
+		if rule := currentRule.RuleMap[rc.Host]; rule != nil {
+			rate.Version = rule.Version
+		}
+		rr.RuleMap[rc.Host] = rate
 	}
 	return rr, nil
 }
 
 type Metrics struct {
-	MaxHost           string           `json:"maxHost"`
 	TotalRequestCount float64          `json:"totalRequestCount"`
 	RequestCountMap   map[Host]float64 `json:",inline"`
+}
+
+type RequestCount struct {
+	Host  `json:"host"`
+	Count float64 `json:"count"`
 }

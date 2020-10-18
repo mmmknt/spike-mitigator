@@ -26,7 +26,7 @@ import (
 // 2-4. nop
 // 3. error cases
 
-func TestUnableGetMetrics(t *testing.T) {
+func TestUnableToGetMetrics(t *testing.T) {
 	spec := v1.MitigationRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
@@ -45,14 +45,13 @@ func TestUnableGetMetrics(t *testing.T) {
 	assert.Equal(t, rule, routingRule)
 }
 
-func TestFirstTimeOverMitigationTriggerRate(t *testing.T) {
+func TestFirstTimeOverMitigationTriggerRateAndGenerateSingleRoutingRule(t *testing.T) {
 	spec := v1.MitigationRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
 	rule := &RoutingRule{}
 	metrics := &Metrics{
-		MaxHost:           "test-domain-third",
 		TotalRequestCount: 1000,
 		RequestCountMap: map[Host]float64{
 			Host("test-domain-first"):  100,
@@ -65,8 +64,8 @@ func TestFirstTimeOverMitigationTriggerRate(t *testing.T) {
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-third"): {
-			InternalWeight: 57,
-			ExternalWeight: 43,
+			InternalWeight: 58,
+			ExternalWeight: 42,
 			Version:        "",
 		},
 	}}
@@ -76,7 +75,7 @@ func TestFirstTimeOverMitigationTriggerRate(t *testing.T) {
 	assert.Equal(t, expected, routingRule)
 }
 
-func TestRoutingRuleHasSingleHostAndIsEqualToCurrentMaxHost(t *testing.T) {
+func TestCurrentSingleRoutingRuleAndGenerateSameHostSingleRoutingRule(t *testing.T) {
 	spec := v1.MitigationRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
@@ -89,7 +88,6 @@ func TestRoutingRuleHasSingleHostAndIsEqualToCurrentMaxHost(t *testing.T) {
 		},
 	}}
 	metrics := &Metrics{
-		MaxHost:           "test-domain-second",
 		TotalRequestCount: 1000,
 		RequestCountMap: map[Host]float64{
 			Host("test-domain-first"):  100,
@@ -102,8 +100,8 @@ func TestRoutingRuleHasSingleHostAndIsEqualToCurrentMaxHost(t *testing.T) {
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-second"): {
-			InternalWeight: 28,
-			ExternalWeight: 72,
+			InternalWeight: 29,
+			ExternalWeight: 71,
 			Version:        "some-version",
 		},
 	}}
@@ -113,7 +111,7 @@ func TestRoutingRuleHasSingleHostAndIsEqualToCurrentMaxHost(t *testing.T) {
 	assert.Equal(t, expected, routingRule)
 }
 
-func TestRoutingRuleHasSingleHostAndIsNotEqualToCurrentMaxHost(t *testing.T) {
+func TestCurrentSingleRoutingRuleAndGenerateDifferentSingleRoutingRule(t *testing.T) {
 	spec := v1.MitigationRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
@@ -126,7 +124,6 @@ func TestRoutingRuleHasSingleHostAndIsNotEqualToCurrentMaxHost(t *testing.T) {
 		},
 	}}
 	metrics := &Metrics{
-		MaxHost:           "test-domain-third",
 		TotalRequestCount: 1700,
 		RequestCountMap: map[Host]float64{
 			Host("test-domain-first"):  100,
@@ -139,8 +136,8 @@ func TestRoutingRuleHasSingleHostAndIsNotEqualToCurrentMaxHost(t *testing.T) {
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-third"): {
-			InternalWeight: 32,
-			ExternalWeight: 68,
+			InternalWeight: 33,
+			ExternalWeight: 67,
 			Version:        "",
 		},
 	}}
@@ -150,12 +147,17 @@ func TestRoutingRuleHasSingleHostAndIsNotEqualToCurrentMaxHost(t *testing.T) {
 	assert.Equal(t, expected, routingRule)
 }
 
-func TestMitigationIsNotNeeded(t *testing.T) {
+func TestSufficientResourceAndRoutingRuleIsNotNeeded(t *testing.T) {
 	spec := v1.MitigationRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
 	rule := &RoutingRule{RuleMap: map[Host]*RoutingRate{
+		Host("test-domain-first"): {
+			InternalWeight: int32(50),
+			ExternalWeight: int32(50),
+			Version:        "some-version",
+		},
 		Host("test-domain-second"): {
 			InternalWeight: int32(50),
 			ExternalWeight: int32(50),
@@ -163,7 +165,6 @@ func TestMitigationIsNotNeeded(t *testing.T) {
 		},
 	}}
 	metrics := &Metrics{
-		MaxHost:           "test-domain-second",
 		TotalRequestCount: 1000,
 		RequestCountMap: map[Host]float64{
 			Host("test-domain-first"):  100,
@@ -175,6 +176,87 @@ func TestMitigationIsNotNeeded(t *testing.T) {
 	maxCurrentCPUUtilizationPercentage := int32(30)
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{}}
+
+	routingRule, err := calculate(spec, rule, metrics, maxCurrentCPUUtilizationPercentage)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, routingRule)
+}
+
+func TestFirstTimeOverMitigationTriggerRateAndGenerateMultiRoutingRules(t *testing.T) {
+	spec := v1.MitigationRuleSpec{
+		HPATriggerRate:        60,
+		MitigationTriggerRate: 80,
+	}
+	rule := &RoutingRule{}
+	metrics := &Metrics{
+		TotalRequestCount: 1000,
+		RequestCountMap: map[Host]float64{
+			Host("test-domain-first"):  200,
+			Host("test-domain-second"): 300,
+			Host("test-domain-third"):  400,
+			Host("test-domain-fourth"): 100,
+		},
+	}
+	maxCurrentCPUUtilizationPercentage := int32(200)
+
+	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
+		Host("test-domain-third"): {
+			InternalWeight: 1,
+			ExternalWeight: 99,
+			Version:        "",
+		},
+		Host("test-domain-second"): {
+			InternalWeight: 16,
+			ExternalWeight: 84,
+			Version:        "",
+		},
+	}}
+
+	routingRule, err := calculate(spec, rule, metrics, maxCurrentCPUUtilizationPercentage)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, routingRule)
+}
+
+func TestCurrentMultiRoutingRulesAndGenerateMultiRoutingRules(t *testing.T) {
+	spec := v1.MitigationRuleSpec{
+		HPATriggerRate:        60,
+		MitigationTriggerRate: 80,
+	}
+	rule := &RoutingRule{RuleMap: map[Host]*RoutingRate{
+		Host("test-domain-fourth"): {
+			InternalWeight: int32(40),
+			ExternalWeight: int32(60),
+			Version:        "some-version",
+		},
+		Host("test-domain-first"): {
+			InternalWeight: int32(80),
+			ExternalWeight: int32(20),
+			Version:        "other-version",
+		},
+	}}
+	metrics := &Metrics{
+		TotalRequestCount: 1000,
+		RequestCountMap: map[Host]float64{
+			Host("test-domain-first"):  100,
+			Host("test-domain-second"): 300,
+			Host("test-domain-third"):  400,
+			Host("test-domain-fourth"): 200,
+		},
+	}
+	maxCurrentCPUUtilizationPercentage := int32(150)
+
+	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
+		Host("test-domain-fourth"): {
+			InternalWeight: 1,
+			ExternalWeight: 99,
+			Version:        "some-version",
+		},
+		Host("test-domain-third"): {
+			InternalWeight: 10,
+			ExternalWeight: 90,
+			Version:        "",
+		},
+	}}
 
 	routingRule, err := calculate(spec, rule, metrics, maxCurrentCPUUtilizationPercentage)
 	assert.NoError(t, err)
