@@ -44,6 +44,13 @@ spec:
               type: integer
             internalHost:
               type: string
+            metricsCondition:
+              properties:
+                clusterName:
+                  type: string
+                metricsName:
+                  type: string
+              type: object
             metricsStoreSecretRef:
               properties:
                 ddApiKeyRef:

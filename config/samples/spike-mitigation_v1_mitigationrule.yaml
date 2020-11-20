@@ -8,5 +8,14 @@ spec:
   internalHost: "internal host"
   hpaTriggerRate: 50
   mitigationTriggerRate: 80
-  ddApiKey: "Api Key for datadog"
-  ddAppKey: "App Key for datadog"
+  metricsStoreSecretRef:
+    ddApiKeyRef:
+      name: "secret name for datadog api key"
+      key: "key in secret's data for datadog api key"
+    ddAppKeyRef:
+      name: "secret name for datadog app key"
+      key: "key in secret's data for datadog app key"
+  metricsCondition:
+    metricsName: "the name of metrics that stores hpa"
+    clusterName: "the name of kubernetes cluster that receives requests"
+
