@@ -36,10 +36,6 @@ spec:
         spec:
           description: MitigationRuleSpec defines the desired state of MitigationRule
           properties:
-            ddApiKey:
-              type: string
-            ddAppKey:
-              type: string
             externalHost:
               description: Foo is an example field of MitigationRule. Edit MitigationRule_types.go
                 to remove/update
@@ -48,6 +44,23 @@ spec:
               type: integer
             internalHost:
               type: string
+            metricsStoreSecretRef:
+              properties:
+                ddApiKeyRef:
+                  properties:
+                    key:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+                ddAppKeyRef:
+                  properties:
+                    key:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+              type: object
             mitigationTriggerRate:
               type: integer
           type: object
