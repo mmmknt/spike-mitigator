@@ -19,17 +19,20 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
 	"github.com/DataDog/datadog-api-client-go/api/v1/datadog"
 	istiocli "istio.io/client-go/pkg/clientset/versioned"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	spikemitigationv1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
 	"github.com/mmmknt/spike-mitigation-operator/controllers"
@@ -88,11 +91,15 @@ func main() {
 	}
 	ddConfig := datadog.NewConfiguration()
 	ddClient := datadog.NewAPIClient(ddConfig)
-
+	factory := informers.NewSharedInformerFactory(kubeClientset, time.Minute*5)
 	calculator := &controllers.MitigationCalculator{
 		KubernetesClientset: kubeClientset,
 		DDClient:            ddClient,
+		SecretLister:        factory.Core().V1().Secrets().Lister(),
 	}
+	stopCh := signals.SetupSignalHandler()
+	factory.Start(stopCh)
+	factory.WaitForCacheSync(stopCh)
 
 	if err = (&controllers.MitigationRuleReconciler{
 		Client:         mgr.GetClient(),

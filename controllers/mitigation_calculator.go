@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -9,7 +10,9 @@ import (
 	"github.com/DataDog/datadog-api-client-go/api/v1/datadog"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/listers/core/v1"
 
 	v1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
 )
@@ -17,6 +20,7 @@ import (
 type MitigationCalculator struct {
 	KubernetesClientset *kubernetes.Clientset
 	DDClient            *datadog.APIClient
+	SecretLister        corev1.SecretLister
 }
 
 func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, currentRoutingRule *RoutingRule, spec v1.MitigationRuleSpec) (*RoutingRule, error) {
@@ -43,6 +47,41 @@ func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, c
 	}
 
 	// 2. Scaling with too heavy or not scaling -> recalculate
+	sl, err := c.SecretLister.List(labels.Nothing())
+	if err != nil {
+		return nil, err
+	}
+	apiKeyRef := spec.MetricsStoreSecretRef.DDApiKeyRef
+	appKeyRef := spec.MetricsStoreSecretRef.DDAppKeyRef
+	var ddApiKey, ddAppKey string
+	for _, secret := range sl {
+		if len(ddApiKey) > 0 && len(ddAppKey) > 0 {
+			break
+		}
+		if secret.Name == apiKeyRef.Name {
+			v := secret.Data[apiKeyRef.Key]
+			if len(v) == 0 {
+				return nil, fmt.Errorf("secret data is not found with name %s and key %s", apiKeyRef.Name, apiKeyRef.Key)
+			}
+			ddApiKey = string(v)
+			continue
+		}
+		if secret.Name == appKeyRef.Name {
+			v := secret.Data[appKeyRef.Key]
+			if len(v) == 0 {
+				return nil, fmt.Errorf("secret data is not found with name %s and key %s", appKeyRef.Name, appKeyRef.Key)
+			}
+			ddAppKey = string(v)
+			continue
+		}
+	}
+	if len(ddApiKey) == 0 {
+		return nil, fmt.Errorf("secret data is not found with name %s and key %s", apiKeyRef.Name, apiKeyRef.Key)
+	}
+	if len(ddAppKey) == 0 {
+		return nil, fmt.Errorf("secret data is not found with name %s and key %s", appKeyRef.Name, appKeyRef.Key)
+	}
+
 	// TODO tuning metrics window
 	to := time.Now().Unix()
 	from := to - int64(30)
@@ -53,10 +92,10 @@ func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, c
 		datadog.ContextAPIKeys,
 		map[string]datadog.APIKey{
 			"apiKeyAuth": {
-				Key: spec.DDApiKey,
+				Key: ddApiKey,
 			},
 			"appKeyAuth": {
-				Key: spec.DDAppKey,
+				Key: ddAppKey,
 			},
 		})
 	metrics, err := c.getMetrics(ddCtx, log, query, from, to)
