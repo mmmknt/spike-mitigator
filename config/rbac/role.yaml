@@ -13,6 +13,13 @@ rules:
   verbs:
   - list
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
+  - watch
+- apiGroups:
   - networking.istio.io
   resources:
   - virtualservices

@@ -32,7 +32,6 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	spikemitigationv1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
 	"github.com/mmmknt/spike-mitigation-operator/controllers"
@@ -97,7 +96,7 @@ func main() {
 		DDClient:            ddClient,
 		SecretLister:        factory.Core().V1().Secrets().Lister(),
 	}
-	stopCh := signals.SetupSignalHandler()
+	stopCh := ctrl.SetupSignalHandler()
 	factory.Start(stopCh)
 	factory.WaitForCacheSync(stopCh)
 
@@ -114,7 +113,7 @@ func main() {
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(stopCh); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
