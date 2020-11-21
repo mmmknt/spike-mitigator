@@ -16,6 +16,8 @@ import (
 	v1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
 )
 
+const metricsQueryTemplate = "sum:%s{cluster-name:%s} by {http.host}.as_rate()"
+
 type MitigationCalculator struct {
 	KubernetesClientset *kubernetes.Clientset
 	DDClient            *datadog.APIClient
@@ -60,8 +62,7 @@ func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, c
 	// TODO tuning metrics window
 	to := time.Now().Unix()
 	from := to - int64(30)
-	// TODO be able to specify query
-	query := "sum:http_server_request_count{*} by {http.host}.as_count()"
+	query := fmt.Sprintf(metricsQueryTemplate, spec.MetricsCondition.MetricsName, spec.MetricsCondition.ClusterName)
 	ddCtx := context.WithValue(
 		ctx,
 		datadog.ContextAPIKeys,
@@ -116,7 +117,17 @@ func (c *MitigationCalculator) getMetrics(ctx context.Context, log logr.Logger, 
 			}
 		}
 		scope := se.GetScope()
-		host := strings.TrimPrefix(scope, "http.host:")
+		var host string
+		for _, tag := range strings.Split(scope, ",") {
+			trimmed := strings.TrimPrefix(tag, "http.host:")
+			if tag != trimmed {
+				host = trimmed
+				break
+			}
+		}
+		if len(host) == 0 {
+			return nil, fmt.Errorf("unable to specify host with metrics scope, %s", scope)
+		}
 		rcMap[Host(host)] = latestCount
 		totalCount += latestCount
 	}

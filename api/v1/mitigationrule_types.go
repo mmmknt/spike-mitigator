@@ -29,16 +29,22 @@ type MitigationRuleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MitigationRule. Edit MitigationRule_types.go to remove/update
-	ExternalHost          string                 `json:"externalHost,omitempty"`
-	InternalHost          string                 `json:"internalHost,omitempty"`
-	HPATriggerRate        int                    `json:"hpaTriggerRate,omitempty"`
-	MitigationTriggerRate int                    `json:"mitigationTriggerRate,omitempty"`
-	MetricsStoreSecretRef *MetricsStoreSecretRef `json:"metricsStoreSecretRef,omitempty"`
+	ExternalHost          string                `json:"externalHost,omitempty"`
+	InternalHost          string                `json:"internalHost,omitempty"`
+	HPATriggerRate        int                   `json:"hpaTriggerRate,omitempty"`
+	MitigationTriggerRate int                   `json:"mitigationTriggerRate,omitempty"`
+	MetricsStoreSecretRef MetricsStoreSecretRef `json:"metricsStoreSecretRef,omitempty"`
+	MetricsCondition      MetricsCondition      `json:"metricsCondition,omitempty"`
+}
+
+type MetricsCondition struct {
+	MetricsName string `json:"metricsName,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
 }
 
 type MetricsStoreSecretRef struct {
-	DDApiKeyRef *SecretRef `json:"ddApiKeyRef,omitempty"`
-	DDAppKeyRef *SecretRef `json:"ddAppKeyRef,omitempty"`
+	DDApiKeyRef SecretRef `json:"ddApiKeyRef,omitempty"`
+	DDAppKeyRef SecretRef `json:"ddAppKeyRef,omitempty"`
 }
 
 type SecretRef struct {
