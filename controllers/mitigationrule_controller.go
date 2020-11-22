@@ -45,7 +45,7 @@ type MitigationRuleReconciler struct {
 // +kubebuilder:rbac:groups=spike-mitigation.mmmknt.dev,resources=mitigationrules,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=spike-mitigation.mmmknt.dev,resources=mitigationrules/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=networking.istio.io,resources=virtualservices,verbs=list;create;update;delete
-// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=list
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=list;watch
 
 func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

@@ -31,8 +31,9 @@ type MitigationRuleSpec struct {
 	// Foo is an example field of MitigationRule. Edit MitigationRule_types.go to remove/update
 	ExternalHost          string                `json:"externalHost,omitempty"`
 	InternalHost          string                `json:"internalHost,omitempty"`
-	HPATriggerRate        int                   `json:"hpaTriggerRate,omitempty"`
-	MitigationTriggerRate int                   `json:"mitigationTriggerRate,omitempty"`
+	HPATriggerRate        int32                 `json:"hpaTriggerRate,omitempty"`
+	MonitoredHPANames     []string              `json:"monitoredHpaNames,omitempty"`
+	MitigationTriggerRate int32                 `json:"mitigationTriggerRate,omitempty"`
 	MetricsStoreSecretRef MetricsStoreSecretRef `json:"metricsStoreSecretRef,omitempty"`
 	MetricsCondition      MetricsCondition      `json:"metricsCondition,omitempty"`
 }

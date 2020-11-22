@@ -11,7 +11,7 @@ rules:
   resources:
   - horizontalpodautoscalers
   verbs:
-  - list
+  - get
 - apiGroups:
   - ""
   resources:
