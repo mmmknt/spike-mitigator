@@ -27,23 +27,21 @@ type MitigationCalculator struct {
 func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, currentRoutingRule *RoutingRule, spec v1.MitigationRuleSpec) (*RoutingRule, error) {
 	// TODO make namespace changeable
 	defaultNamespace := "default"
-	hpaList, err := c.KubernetesClientset.AutoscalingV1().HorizontalPodAutoscalers(defaultNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	log.Info("succeed to get HPA list", "HPA", hpaList)
-
 	maxCurrentCPUUtilizationPercentage := int32(0)
-	for i := range hpaList.Items {
-		// TODO make changeable target hpa
-		item := hpaList.Items[i]
-		is := item.Status
+	for _, hpaName := range spec.MonitoredHPANames {
+		hpa, err := c.KubernetesClientset.AutoscalingV1().HorizontalPodAutoscalers(defaultNamespace).Get(ctx, hpaName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		log.Info("succeed to get HPA", "HPA", hpa)
+		is := hpa.Status
 		if *is.CurrentCPUUtilizationPercentage >= maxCurrentCPUUtilizationPercentage {
 			maxCurrentCPUUtilizationPercentage = *is.CurrentCPUUtilizationPercentage
 		}
 	}
+
 	// 1. Scaling with proper load -> keep current RoutingRule
-	if maxCurrentCPUUtilizationPercentage >= int32(spec.HPATriggerRate) && maxCurrentCPUUtilizationPercentage < int32(spec.MitigationTriggerRate) {
+	if maxCurrentCPUUtilizationPercentage >= spec.HPATriggerRate && maxCurrentCPUUtilizationPercentage < spec.MitigationTriggerRate {
 		return currentRoutingRule, nil
 	}
 

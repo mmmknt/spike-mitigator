@@ -18,4 +18,5 @@ spec:
   metricsCondition:
     metricsName: "the name of metrics that stores hpa"
     clusterName: "the name of kubernetes cluster that receives requests"
-
+  monitoredHpaNames:
+    - "hpa names that is target to judge to need mitigation or not"
