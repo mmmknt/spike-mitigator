@@ -4,6 +4,7 @@ metadata:
   name: mitigationrule-sample
 spec:
   # Add fields here
+  gatewayName: "gateway name"
   externalHost: "external host"
   internalHost: "internal host"
   hpaTriggerRate: 50
@@ -18,5 +19,6 @@ spec:
   metricsCondition:
     metricsName: "the name of metrics that stores hpa"
     clusterName: "the name of kubernetes cluster that receives requests"
+  monitoredHpaNamespace: "namespace that monitored hpa is in"
   monitoredHpaNames:
     - "hpa names that is target to judge to need mitigation or not"

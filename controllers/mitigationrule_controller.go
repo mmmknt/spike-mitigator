@@ -33,6 +33,10 @@ import (
 	spikemitigationv1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
 )
 
+const (
+	virtualServiceNamespace = "default"
+)
+
 // MitigationRuleReconciler reconciles a MitigationRule object
 type MitigationRuleReconciler struct {
 	client.Client
@@ -62,8 +66,7 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	// debug
 	log.Info("succeed to get mitigation rule", "mitigation rule", mitigationRule)
 
-	defaultNamespace := "default"
-	vsList, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(defaultNamespace).List(ctx, metav1.ListOptions{})
+	vsList, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log.Error(err, "unable to get VirtualService list")
 		return ctrl.Result{}, err
@@ -114,7 +117,7 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 	// TODO apply routing rule
 	// TODO set labels, internal host and external host values, to VirtualService's meta
-	r.apply(mitigationRule, currentRR, routingRule)
+	r.apply(mitigationRule, currentRR, routingRule, mitigationRule.Spec.GatewayName)
 
 	// TODO make RequeueAfter to be able change per loop
 	return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
@@ -126,7 +129,7 @@ func (r *MitigationRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule) error {
+func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule, gatewayName string) error {
 	creates := make(map[Host]*RoutingRate)
 	updates := make(map[Host]*RoutingRate)
 	deletes := make(map[Host]*RoutingRate)
@@ -144,30 +147,28 @@ func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.Mitig
 		}
 	}
 
-	// TODO
-	namespace := "default"
 	for h, rr := range creates {
-		vs := getVirtualService(mitigationRule, string(h), int(rr.InternalWeight), int(rr.ExternalWeight))
-		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(namespace).Create(context.TODO(), vs, metav1.CreateOptions{}); err != nil {
+		vs := getVirtualService(mitigationRule, gatewayName, string(h), int(rr.InternalWeight), int(rr.ExternalWeight))
+		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Create(context.TODO(), vs, metav1.CreateOptions{}); err != nil {
 			return err
 		}
 	}
 	for h, rr := range updates {
-		vs := getVirtualService(mitigationRule, string(h), int(rr.InternalWeight), int(rr.ExternalWeight))
+		vs := getVirtualService(mitigationRule, gatewayName, string(h), int(rr.InternalWeight), int(rr.ExternalWeight))
 		vs.ObjectMeta.ResourceVersion = rr.Version
-		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(namespace).Update(context.TODO(), vs, metav1.UpdateOptions{}); err != nil {
+		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Update(context.TODO(), vs, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
 	for h, _ := range deletes {
-		if err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(namespace).Delete(context.TODO(), getVirtualServiceName(string(h)), metav1.DeleteOptions{}); err != nil {
+		if err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Delete(context.TODO(), getVirtualServiceName(string(h)), metav1.DeleteOptions{}); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, host string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
+func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gatewayName, host string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
 	spec := mitigationRule.Spec
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{
@@ -192,7 +193,7 @@ func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, host st
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: []string{host},
 			// TODO external
-			Gateways: []string{"greeting-gateway"},
+			Gateways: []string{gatewayName},
 			Http: []*networkingv1alpha3.HTTPRoute{
 				&networkingv1alpha3.HTTPRoute{
 					Route: []*networkingv1alpha3.HTTPRouteDestination{
