@@ -37,6 +37,8 @@ spec:
           description: MitigationRuleSpec defines the desired state of MitigationRule
           properties:
             externalHost:
+              type: string
+            gatewayName:
               description: Foo is an example field of MitigationRule. Edit MitigationRule_types.go
                 to remove/update
               type: string
@@ -76,6 +78,8 @@ spec:
               items:
                 type: string
               type: array
+            monitoredHpaNamespace:
+              type: string
           type: object
         status:
           description: MitigationRuleStatus defines the observed state of MitigationRule

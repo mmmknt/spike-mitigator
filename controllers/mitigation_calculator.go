@@ -25,11 +25,9 @@ type MitigationCalculator struct {
 }
 
 func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, currentRoutingRule *RoutingRule, spec v1.MitigationRuleSpec) (*RoutingRule, error) {
-	// TODO make namespace changeable
-	defaultNamespace := "default"
 	maxCurrentCPUUtilizationPercentage := int32(0)
 	for _, hpaName := range spec.MonitoredHPANames {
-		hpa, err := c.KubernetesClientset.AutoscalingV1().HorizontalPodAutoscalers(defaultNamespace).Get(ctx, hpaName, metav1.GetOptions{})
+		hpa, err := c.KubernetesClientset.AutoscalingV1().HorizontalPodAutoscalers(spec.MonitoredHPANamespace).Get(ctx, hpaName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
