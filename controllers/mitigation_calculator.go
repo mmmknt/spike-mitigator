@@ -44,13 +44,14 @@ func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, c
 	}
 
 	// 2. Scaling with too heavy or not scaling -> recalculate
+	sn := spec.SecretNamespace
 	apiKeyRef := spec.MetricsStoreSecretRef.DDApiKeyRef
-	ddApiKey, err := c.getSecretValue(apiKeyRef.Name, apiKeyRef.Key)
+	ddApiKey, err := c.getSecretValue(sn, apiKeyRef.Name, apiKeyRef.Key)
 	if err != nil {
 		return nil, err
 	}
 	appKeyRef := spec.MetricsStoreSecretRef.DDAppKeyRef
-	ddAppKey, err := c.getSecretValue(appKeyRef.Name, appKeyRef.Key)
+	ddAppKey, err := c.getSecretValue(sn, appKeyRef.Name, appKeyRef.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -77,14 +78,14 @@ func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, c
 	return calculate(spec, currentRoutingRule, metrics, maxCurrentCPUUtilizationPercentage)
 }
 
-func (c *MitigationCalculator) getSecretValue(name, key string) (string, error) {
-	secret, err := c.SecretLister.Secrets("default").Get(name)
+func (c *MitigationCalculator) getSecretValue(namespace, name, key string) (string, error) {
+	secret, err := c.SecretLister.Secrets(namespace).Get(name)
 	if err != nil {
 		return "", err
 	}
 	bytes, ok := secret.Data[key]
 	if !ok {
-		return "", fmt.Errorf("secret data is not found with name %s and key %s", name, key)
+		return "", fmt.Errorf("secret data is not found with namespace %s, name %s and key %s", namespace, name, key)
 	}
 	return string(bytes), nil
 }

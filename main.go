@@ -91,10 +91,11 @@ func main() {
 	ddConfig := datadog.NewConfiguration()
 	ddClient := datadog.NewAPIClient(ddConfig)
 	factory := informers.NewSharedInformerFactory(kubeClientset, time.Minute*5)
+	sl := factory.Core().V1().Secrets().Lister()
 	calculator := &controllers.MitigationCalculator{
 		KubernetesClientset: kubeClientset,
 		DDClient:            ddClient,
-		SecretLister:        factory.Core().V1().Secrets().Lister(),
+		SecretLister:        sl,
 	}
 	stopCh := ctrl.SetupSignalHandler()
 	factory.Start(stopCh)
@@ -106,6 +107,7 @@ func main() {
 		Calculator:     calculator,
 		Log:            ctrl.Log.WithName("controllers").WithName("MitigationRule"),
 		Scheme:         mgr.GetScheme(),
+		SecretLister:   sl,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MitigationRule")
 		os.Exit(1)

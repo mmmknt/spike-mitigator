@@ -36,6 +36,13 @@ spec:
         spec:
           description: MitigationRuleSpec defines the desired state of MitigationRule
           properties:
+            externalAuthorizationRef:
+              properties:
+                key:
+                  type: string
+                name:
+                  type: string
+              type: object
             externalHost:
               type: string
             gatewayName:
@@ -79,6 +86,8 @@ spec:
                 type: string
               type: array
             monitoredHpaNamespace:
+              type: string
+            secretNamespace:
               type: string
           type: object
         status:
