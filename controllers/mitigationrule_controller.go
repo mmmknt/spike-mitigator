@@ -27,6 +27,7 @@ import (
 	istiocli "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	corelisters "k8s.io/client-go/listers/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,6 +42,7 @@ const (
 type MitigationRuleReconciler struct {
 	client.Client
 	IstioClientset *istiocli.Clientset
+	SecretLister   corelisters.SecretLister
 	Calculator     *MitigationCalculator
 	Log            logr.Logger
 	Scheme         *runtime.Scheme
@@ -117,10 +119,28 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 	// TODO apply routing rule
 	// TODO set labels, internal host and external host values, to VirtualService's meta
-	r.apply(mitigationRule, currentRR, routingRule, mitigationRule.Spec.GatewayName)
+	ear := mitigationRule.Spec.ExternalAuthorizationRef
+	sn := mitigationRule.Spec.SecretNamespace
+	authorization, err := r.getSecretValue(sn, ear.Name, ear.Key)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
+	}
+	r.apply(mitigationRule, currentRR, routingRule, mitigationRule.Spec.GatewayName, authorization)
 
 	// TODO make RequeueAfter to be able change per loop
 	return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+}
+
+func (r *MitigationRuleReconciler) getSecretValue(namespace, name, key string) (string, error) {
+	secret, err := r.SecretLister.Secrets(namespace).Get(name)
+	if err != nil {
+		return "", err
+	}
+	bytes, ok := secret.Data[key]
+	if !ok {
+		return "", fmt.Errorf("secret data is not found with namespace %s, name %s and key %s", namespace, name, key)
+	}
+	return string(bytes), nil
 }
 
 func (r *MitigationRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -129,7 +149,7 @@ func (r *MitigationRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule, gatewayName string) error {
+func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule, gatewayName, authorization string) error {
 	creates := make(map[Host]*RoutingRate)
 	updates := make(map[Host]*RoutingRate)
 	deletes := make(map[Host]*RoutingRate)
@@ -148,13 +168,13 @@ func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.Mitig
 	}
 
 	for h, rr := range creates {
-		vs := getVirtualService(mitigationRule, gatewayName, string(h), int(rr.InternalWeight), int(rr.ExternalWeight))
+		vs := getVirtualService(mitigationRule, gatewayName, string(h), authorization, int(rr.InternalWeight), int(rr.ExternalWeight))
 		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Create(context.TODO(), vs, metav1.CreateOptions{}); err != nil {
 			return err
 		}
 	}
 	for h, rr := range updates {
-		vs := getVirtualService(mitigationRule, gatewayName, string(h), int(rr.InternalWeight), int(rr.ExternalWeight))
+		vs := getVirtualService(mitigationRule, gatewayName, string(h), authorization, int(rr.InternalWeight), int(rr.ExternalWeight))
 		vs.ObjectMeta.ResourceVersion = rr.Version
 		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Update(context.TODO(), vs, metav1.UpdateOptions{}); err != nil {
 			return err
@@ -168,8 +188,13 @@ func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.Mitig
 	return nil
 }
 
-func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gatewayName, host string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
+func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gatewayName, host, authorization string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
 	spec := mitigationRule.Spec
+	internalHeader := map[string]string{"x-original-host": host}
+	externalHeader := internalHeader
+	if len(authorization) > 0 {
+		externalHeader["Authorization"] = fmt.Sprintf("Bearer %s", authorization)
+	}
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getVirtualServiceName(host),
@@ -207,7 +232,7 @@ func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gateway
 							Weight: int32(externalWeight),
 							Headers: &networkingv1alpha3.Headers{
 								Request: &networkingv1alpha3.Headers_HeaderOperations{
-									Set: map[string]string{"x-original-host": host},
+									Set: externalHeader,
 								},
 							},
 						},
@@ -221,7 +246,7 @@ func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gateway
 							Weight: int32(internalWeight),
 							Headers: &networkingv1alpha3.Headers{
 								Request: &networkingv1alpha3.Headers_HeaderOperations{
-									Set: map[string]string{"x-original-host": host},
+									Set: internalHeader,
 								},
 							},
 						},

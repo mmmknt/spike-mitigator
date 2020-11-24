@@ -5,7 +5,11 @@ metadata:
 spec:
   # Add fields here
   gatewayName: "gateway name"
+  secretNamespace: "namespace of secret that is needed for spike mitigation"
   externalHost: "external host"
+  externalAuthorizationRef:
+    name: "secret name for authorization to external host"
+    key: "key in secret's data for authorization to external host"
   internalHost: "internal host"
   hpaTriggerRate: 50
   mitigationTriggerRate: 80

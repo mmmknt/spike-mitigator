@@ -29,15 +29,17 @@ type MitigationRuleSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MitigationRule. Edit MitigationRule_types.go to remove/update
-	GatewayName           string                `json:"gatewayName,omitempty"`
-	ExternalHost          string                `json:"externalHost,omitempty"`
-	InternalHost          string                `json:"internalHost,omitempty"`
-	HPATriggerRate        int32                 `json:"hpaTriggerRate,omitempty"`
-	MonitoredHPANamespace string                `json:"monitoredHpaNamespace,omitempty"`
-	MonitoredHPANames     []string              `json:"monitoredHpaNames,omitempty"`
-	MitigationTriggerRate int32                 `json:"mitigationTriggerRate,omitempty"`
-	MetricsStoreSecretRef MetricsStoreSecretRef `json:"metricsStoreSecretRef,omitempty"`
-	MetricsCondition      MetricsCondition      `json:"metricsCondition,omitempty"`
+	GatewayName              string                `json:"gatewayName,omitempty"`
+	ExternalHost             string                `json:"externalHost,omitempty"`
+	ExternalAuthorizationRef SecretRef             `json:"externalAuthorizationRef,omitempty"`
+	InternalHost             string                `json:"internalHost,omitempty"`
+	HPATriggerRate           int32                 `json:"hpaTriggerRate,omitempty"`
+	MonitoredHPANamespace    string                `json:"monitoredHpaNamespace,omitempty"`
+	MonitoredHPANames        []string              `json:"monitoredHpaNames,omitempty"`
+	MitigationTriggerRate    int32                 `json:"mitigationTriggerRate,omitempty"`
+	MetricsStoreSecretRef    MetricsStoreSecretRef `json:"metricsStoreSecretRef,omitempty"`
+	MetricsCondition         MetricsCondition      `json:"metricsCondition,omitempty"`
+	SecretNamespace          string                `json:"secretNamespace,omitempty"`
 }
 
 type MetricsCondition struct {
