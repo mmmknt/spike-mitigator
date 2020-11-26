@@ -40,6 +40,12 @@ type MitigationRuleSpec struct {
 	MetricsStoreSecretRef    MetricsStoreSecretRef `json:"metricsStoreSecretRef,omitempty"`
 	MetricsCondition         MetricsCondition      `json:"metricsCondition,omitempty"`
 	SecretNamespace          string                `json:"secretNamespace,omitempty"`
+	OptionalAuthorization    OptionalAuthorization `json:"optionalAuthorization,omitempty"`
+}
+
+type OptionalAuthorization struct {
+	KeyRef   SecretRef `json:"keyRef,omitempty"`
+	ValueRef SecretRef `json:"valueRef,omitempty"`
 }
 
 type MetricsCondition struct {
