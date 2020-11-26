@@ -33,6 +33,7 @@ type MitigationRuleSpec struct {
 	ExternalHost             string                `json:"externalHost,omitempty"`
 	ExternalAuthorizationRef SecretRef             `json:"externalAuthorizationRef,omitempty"`
 	InternalHost             string                `json:"internalHost,omitempty"`
+	HostInfoHeaderKeyRef     SecretRef             `json:"hostInfoHeaderKeyRef,omitempty"`
 	HPATriggerRate           int32                 `json:"hpaTriggerRate,omitempty"`
 	MonitoredHPANamespace    string                `json:"monitoredHpaNamespace,omitempty"`
 	MonitoredHPANames        []string              `json:"monitoredHpaNames,omitempty"`

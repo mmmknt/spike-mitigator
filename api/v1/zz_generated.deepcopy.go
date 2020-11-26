@@ -119,6 +119,7 @@ func (in *MitigationRuleList) DeepCopyObject() runtime.Object {
 func (in *MitigationRuleSpec) DeepCopyInto(out *MitigationRuleSpec) {
 	*out = *in
 	out.ExternalAuthorizationRef = in.ExternalAuthorizationRef
+	out.HostInfoHeaderKeyRef = in.HostInfoHeaderKeyRef
 	if in.MonitoredHPANames != nil {
 		in, out := &in.MonitoredHPANames, &out.MonitoredHPANames
 		*out = make([]string, len(*in))
