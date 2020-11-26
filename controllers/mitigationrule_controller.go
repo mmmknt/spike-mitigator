@@ -125,7 +125,17 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	r.apply(mitigationRule, currentRR, routingRule, mitigationRule.Spec.GatewayName, authorization)
+	oakr := mitigationRule.Spec.OptionalAuthorization.KeyRef
+	oaKey, err := r.getSecretValue(sn, oakr.Name, oakr.Key)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
+	}
+	oavr := mitigationRule.Spec.OptionalAuthorization.ValueRef
+	oaValue, err := r.getSecretValue(sn, oavr.Name, oavr.Key)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
+	}
+	r.apply(mitigationRule, currentRR, routingRule, mitigationRule.Spec.GatewayName, authorization, oaKey, oaValue)
 
 	// TODO make RequeueAfter to be able change per loop
 	return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
@@ -149,7 +159,7 @@ func (r *MitigationRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule, gatewayName, authorization string) error {
+func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule, gatewayName, authorization, optionalAuthorizationKey, optionalAuthorizationValue string) error {
 	creates := make(map[Host]*RoutingRate)
 	updates := make(map[Host]*RoutingRate)
 	deletes := make(map[Host]*RoutingRate)
@@ -168,13 +178,13 @@ func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.Mitig
 	}
 
 	for h, rr := range creates {
-		vs := getVirtualService(mitigationRule, gatewayName, string(h), authorization, int(rr.InternalWeight), int(rr.ExternalWeight))
+		vs := getVirtualService(mitigationRule, gatewayName, string(h), authorization, optionalAuthorizationKey, optionalAuthorizationValue, int(rr.InternalWeight), int(rr.ExternalWeight))
 		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Create(context.TODO(), vs, metav1.CreateOptions{}); err != nil {
 			return err
 		}
 	}
 	for h, rr := range updates {
-		vs := getVirtualService(mitigationRule, gatewayName, string(h), authorization, int(rr.InternalWeight), int(rr.ExternalWeight))
+		vs := getVirtualService(mitigationRule, gatewayName, string(h), authorization, optionalAuthorizationKey, optionalAuthorizationValue, int(rr.InternalWeight), int(rr.ExternalWeight))
 		vs.ObjectMeta.ResourceVersion = rr.Version
 		if _, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).Update(context.TODO(), vs, metav1.UpdateOptions{}); err != nil {
 			return err
@@ -188,12 +198,16 @@ func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.Mitig
 	return nil
 }
 
-func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gatewayName, host, authorization string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
+func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gatewayName, host, authorization, optionalAuthorizationKey, optionalAuthorizationValue string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
 	spec := mitigationRule.Spec
 	internalHeader := map[string]string{"x-original-host": host}
-	externalHeader := internalHeader
+	externalHeader := map[string]string{"x-original-host": host}
 	if len(authorization) > 0 {
 		externalHeader["Authorization"] = fmt.Sprintf("Bearer %s", authorization)
+	}
+	if len(optionalAuthorizationKey) != 0 && len(optionalAuthorizationValue) != 0 {
+		internalHeader[optionalAuthorizationKey] = optionalAuthorizationValue
+		externalHeader[optionalAuthorizationKey] = optionalAuthorizationValue
 	}
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{

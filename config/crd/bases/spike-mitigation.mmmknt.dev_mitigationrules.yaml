@@ -87,6 +87,23 @@ spec:
               type: array
             monitoredHpaNamespace:
               type: string
+            optionalAuthorization:
+              properties:
+                keyRef:
+                  properties:
+                    key:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+                valueRef:
+                  properties:
+                    key:
+                      type: string
+                    name:
+                      type: string
+                  type: object
+              type: object
             secretNamespace:
               type: string
           type: object
