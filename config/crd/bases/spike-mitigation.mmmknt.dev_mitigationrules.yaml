@@ -49,6 +49,13 @@ spec:
               description: Foo is an example field of MitigationRule. Edit MitigationRule_types.go
                 to remove/update
               type: string
+            hostInfoHeaderKeyRef:
+              properties:
+                key:
+                  type: string
+                name:
+                  type: string
+              type: object
             hpaTriggerRate:
               format: int32
               type: integer
