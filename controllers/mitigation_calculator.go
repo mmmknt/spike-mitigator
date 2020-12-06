@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
-	v1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
+	api "github.com/mmmknt/spike-mitigator/api/v1alpha1"
 )
 
 const metricsQueryTemplate = "sum:%s{cluster-name:%s} by {http.host}.as_rate()"
@@ -24,7 +24,7 @@ type MitigationCalculator struct {
 	SecretLister        corelisters.SecretLister
 }
 
-func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, currentRoutingRule *RoutingRule, spec v1.MitigationRuleSpec) (*RoutingRule, error) {
+func (c *MitigationCalculator) Calculate(ctx context.Context, log logr.Logger, currentRoutingRule *RoutingRule, spec api.BalancingRuleSpec) (*RoutingRule, error) {
 	maxCurrentCPUUtilizationPercentage := int32(0)
 	for _, hpaName := range spec.MonitoredHPANames {
 		hpa, err := c.KubernetesClientset.AutoscalingV1().HorizontalPodAutoscalers(spec.MonitoredHPANamespace).Get(ctx, hpaName, metav1.GetOptions{})
@@ -141,7 +141,7 @@ func (c *MitigationCalculator) getMetrics(ctx context.Context, log logr.Logger, 
 	return metrics, nil
 }
 
-func calculate(spec v1.MitigationRuleSpec, currentRule *RoutingRule, metrics *Metrics, maxCPUUtilizationPercentage int32) (*RoutingRule, error) {
+func calculate(spec api.BalancingRuleSpec, currentRule *RoutingRule, metrics *Metrics, maxCPUUtilizationPercentage int32) (*RoutingRule, error) {
 	if metrics == nil {
 		return currentRule, nil
 	}

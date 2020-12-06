@@ -1,4 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
+namespace: "mitigator-temp-system"
 resources:
-- spike-mitigation_v1_mitigationrule.yaml
+- loadbalancing_v1alpha1_balancingrule.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

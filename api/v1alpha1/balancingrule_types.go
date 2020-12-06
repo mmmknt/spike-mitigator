@@ -1,5 +1,5 @@
 /*
-Copyright 2020 mmmknt.
+
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,12 +23,12 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// MitigationRuleSpec defines the desired state of MitigationRule
-type MitigationRuleSpec struct {
+// BalancingRuleSpec defines the desired state of BalancingRule
+type BalancingRuleSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of MitigationRule. Edit MitigationRule_types.go to remove/update
+	// Foo is an example field of BalancingRule. Edit BalancingRule_types.go to remove/update
 	GatewayName              string                `json:"gatewayName,omitempty"`
 	ExternalHost             string                `json:"externalHost,omitempty"`
 	ExternalAuthorizationRef SecretRef             `json:"externalAuthorizationRef,omitempty"`
@@ -64,8 +64,8 @@ type SecretRef struct {
 	Key  string `json:"key,omitempty"`
 }
 
-// MitigationRuleStatus defines the observed state of MitigationRule
-type MitigationRuleStatus struct {
+// BalancingRuleStatus defines the observed state of BalancingRule
+type BalancingRuleStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -73,25 +73,24 @@ type MitigationRuleStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// MitigationRule is the Schema for the mitigationrules API
-// +kubebuilder:subresource:status
-type MitigationRule struct {
+// BalancingRule is the Schema for the balancingrules API
+type BalancingRule struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MitigationRuleSpec   `json:"spec,omitempty"`
-	Status MitigationRuleStatus `json:"status,omitempty"`
+	Spec   BalancingRuleSpec   `json:"spec,omitempty"`
+	Status BalancingRuleStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// MitigationRuleList contains a list of MitigationRule
-type MitigationRuleList struct {
+// BalancingRuleList contains a list of BalancingRule
+type BalancingRuleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MitigationRule `json:"items"`
+	Items           []BalancingRule `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&MitigationRule{}, &MitigationRuleList{})
+	SchemeBuilder.Register(&BalancingRule{}, &BalancingRuleList{})
 }

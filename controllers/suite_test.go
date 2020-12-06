@@ -1,5 +1,5 @@
 /*
-Copyright 2020 mmmknt.
+
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	spikemitigationv1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
+	loadbalancingv1alpha1 "github.com/mmmknt/spike-mitigator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -62,7 +62,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = spikemitigationv1.AddToScheme(scheme.Scheme)
+	err = loadbalancingv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

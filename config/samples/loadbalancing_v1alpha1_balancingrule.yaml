@@ -1,9 +1,8 @@
-apiVersion: spike-mitigation.mmmknt.dev/v1
-kind: MitigationRule
+apiVersion: loadbalancing.spike-mitigator.mmmknt.dev/v1alpha1
+kind: BalancingRule
 metadata:
-  name: mitigationrule-sample
+  name: balancingrule-sample
 spec:
-  # Add fields here
   gatewayName: "gateway name"
   secretNamespace: "namespace of secret that is needed for spike mitigation"
   externalHost: "external host"
@@ -11,6 +10,9 @@ spec:
     name: "secret name for authorization to external host"
     key: "key in secret's data for authorization to external host"
   internalHost: "internal host"
+  hostInfoHeaderKeyRef:
+    name: "TODO"
+    key: "TODO"
   hpaTriggerRate: 50
   mitigationTriggerRate: 80
   metricsStoreSecretRef:
@@ -26,3 +28,10 @@ spec:
   monitoredHpaNamespace: "namespace that monitored hpa is in"
   monitoredHpaNames:
     - "hpa names that is target to judge to need mitigation or not"
+  optionalAuthorization:
+    keyRef:
+      name: "TODO"
+      key: "TODO"
+    valueRef:
+      name: "TODO"
+      key: "TODO"

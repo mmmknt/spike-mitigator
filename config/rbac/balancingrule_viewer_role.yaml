@@ -1,0 +1,20 @@
+# permissions for end users to view balancingrules.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: balancingrule-viewer-role
+rules:
+- apiGroups:
+  - loadbalancing.spike-mitigator.mmmknt.dev
+  resources:
+  - balancingrules
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - loadbalancing.spike-mitigator.mmmknt.dev
+  resources:
+  - balancingrules/status
+  verbs:
+  - get

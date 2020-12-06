@@ -1,1 +1,1 @@
-# spike-mitigation-operator
+# spike-mitigator
