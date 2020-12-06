@@ -140,10 +140,10 @@ func (r *BalancingRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	r.apply(balancingRule, currentRR, routingRule, hostInfoHeaderKey, balancingRule.Spec.GatewayName, authorization, oaKey, oaValue)
+	err = r.apply(balancingRule, currentRR, routingRule, hostInfoHeaderKey, balancingRule.Spec.GatewayName, authorization, oaKey, oaValue)
 
 	// TODO make RequeueAfter to be able change per loop
-	return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 }
 
 func (r *BalancingRuleReconciler) getSecretValue(namespace, name, key string) (string, error) {
