@@ -33,8 +33,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	spikemitigationv1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
-	"github.com/mmmknt/spike-mitigation-operator/controllers"
+	api "github.com/mmmknt/spike-mitigator/api/v1alpha1"
+	"github.com/mmmknt/spike-mitigator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -46,7 +46,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(spikemitigationv1.AddToScheme(scheme))
+	utilruntime.Must(api.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -101,7 +101,7 @@ func main() {
 	factory.Start(stopCh)
 	factory.WaitForCacheSync(stopCh)
 
-	if err = (&controllers.MitigationRuleReconciler{
+	if err = (&controllers.BalancingRuleReconciler{
 		Client:         mgr.GetClient(),
 		IstioClientset: istioClientset,
 		Calculator:     calculator,

@@ -1,13 +1,13 @@
-# permissions for end users to edit mitigationrules.
+# permissions for end users to edit balancingrules.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: mitigationrule-editor-role
+  name: balancingrule-editor-role
 rules:
 - apiGroups:
-  - spike-mitigation.mmmknt.dev
+  - loadbalancing.spike-mitigator.mmmknt.dev
   resources:
-  - mitigationrules
+  - balancingrules
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - spike-mitigation.mmmknt.dev
+  - loadbalancing.spike-mitigator.mmmknt.dev
   resources:
-  - mitigationrules/status
+  - balancingrules/status
   verbs:
   - get

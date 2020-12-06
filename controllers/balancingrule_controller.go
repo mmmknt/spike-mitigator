@@ -1,5 +1,5 @@
 /*
-Copyright 2020 mmmknt.
+
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,15 +31,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	spikemitigationv1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
+	api "github.com/mmmknt/spike-mitigator/api/v1alpha1"
 )
 
 const (
 	virtualServiceNamespace = "default"
 )
 
-// MitigationRuleReconciler reconciles a MitigationRule object
-type MitigationRuleReconciler struct {
+// BalancingRuleReconciler reconciles a BalancingRule object
+type BalancingRuleReconciler struct {
 	client.Client
 	IstioClientset *istiocli.Clientset
 	SecretLister   corelisters.SecretLister
@@ -48,25 +48,25 @@ type MitigationRuleReconciler struct {
 	Scheme         *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=spike-mitigation.mmmknt.dev,resources=mitigationrules,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=spike-mitigation.mmmknt.dev,resources=mitigationrules/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=loadbalancing.spike-mitigator.mmmknt.dev,resources=balancingrules,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=loadbalancing.spike-mitigator.mmmknt.dev,resources=balancingrules/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=networking.istio.io,resources=virtualservices,verbs=list;create;update;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=list;watch
 
-func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *BalancingRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("mitigationrule", req.NamespacedName)
 
 	log.Info("start Reconcile")
-	mitigationRule := &spikemitigationv1.MitigationRule{}
-	if err := r.Get(ctx, req.NamespacedName, mitigationRule); err != nil {
+	balancingRule := &api.BalancingRule{}
+	if err := r.Get(ctx, req.NamespacedName, balancingRule); err != nil {
 		log.Error(err, "unable to get mitigation rule")
 		return ctrl.Result{}, err
 	}
 
 	// debug
-	log.Info("succeed to get mitigation rule", "mitigation rule", mitigationRule)
+	log.Info("succeed to get mitigation rule", "mitigation rule", balancingRule)
 
 	vsList, err := r.IstioClientset.NetworkingV1alpha3().VirtualServices(virtualServiceNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -78,7 +78,7 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	for i := range vsList.Items {
 		item := vsList.Items[i]
 		for ori := range item.OwnerReferences {
-			if item.OwnerReferences[ori].Kind == "MitigationRule" {
+			if item.OwnerReferences[ori].Kind == "BalancingRule" {
 				internalHost := item.ObjectMeta.GetLabels()["InternalHost"]
 				externalHost := item.ObjectMeta.GetLabels()["ExternalHost"]
 				spec := item.Spec
@@ -105,7 +105,7 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	}
 	currentRR := &RoutingRule{RuleMap: rm}
 
-	routingRule, err := r.Calculator.Calculate(ctx, r.Log, currentRR, mitigationRule.Spec)
+	routingRule, err := r.Calculator.Calculate(ctx, r.Log, currentRR, balancingRule.Spec)
 	log.Info("current", "routing rule", currentRR)
 	log.Info("latest", "routing rule", routingRule)
 	if err != nil {
@@ -119,34 +119,34 @@ func (r *MitigationRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 	// TODO apply routing rule
 	// TODO set labels, internal host and external host values, to VirtualService's meta
-	ear := mitigationRule.Spec.ExternalAuthorizationRef
-	sn := mitigationRule.Spec.SecretNamespace
+	ear := balancingRule.Spec.ExternalAuthorizationRef
+	sn := balancingRule.Spec.SecretNamespace
 	authorization, err := r.getSecretValue(sn, ear.Name, ear.Key)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	oakr := mitigationRule.Spec.OptionalAuthorization.KeyRef
+	oakr := balancingRule.Spec.OptionalAuthorization.KeyRef
 	oaKey, err := r.getSecretValue(sn, oakr.Name, oakr.Key)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	oavr := mitigationRule.Spec.OptionalAuthorization.ValueRef
+	oavr := balancingRule.Spec.OptionalAuthorization.ValueRef
 	oaValue, err := r.getSecretValue(sn, oavr.Name, oavr.Key)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	hihkr := mitigationRule.Spec.HostInfoHeaderKeyRef
+	hihkr := balancingRule.Spec.HostInfoHeaderKeyRef
 	hostInfoHeaderKey, err := r.getSecretValue(sn, hihkr.Name, hihkr.Key)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	r.apply(mitigationRule, currentRR, routingRule, hostInfoHeaderKey, mitigationRule.Spec.GatewayName, authorization, oaKey, oaValue)
+	r.apply(balancingRule, currentRR, routingRule, hostInfoHeaderKey, balancingRule.Spec.GatewayName, authorization, oaKey, oaValue)
 
 	// TODO make RequeueAfter to be able change per loop
 	return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 }
 
-func (r *MitigationRuleReconciler) getSecretValue(namespace, name, key string) (string, error) {
+func (r *BalancingRuleReconciler) getSecretValue(namespace, name, key string) (string, error) {
 	secret, err := r.SecretLister.Secrets(namespace).Get(name)
 	if err != nil {
 		return "", err
@@ -158,13 +158,13 @@ func (r *MitigationRuleReconciler) getSecretValue(namespace, name, key string) (
 	return string(bytes), nil
 }
 
-func (r *MitigationRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *BalancingRuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&spikemitigationv1.MitigationRule{}).
+		For(&api.BalancingRule{}).
 		Complete(r)
 }
 
-func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.MitigationRule, current, latest *RoutingRule, hostInfoHeaderKey, gatewayName, authorization, optionalAuthorizationKey, optionalAuthorizationValue string) error {
+func (r *BalancingRuleReconciler) apply(mitigationRule *api.BalancingRule, current, latest *RoutingRule, hostInfoHeaderKey, gatewayName, authorization, optionalAuthorizationKey, optionalAuthorizationValue string) error {
 	creates := make(map[Host]*RoutingRate)
 	updates := make(map[Host]*RoutingRate)
 	deletes := make(map[Host]*RoutingRate)
@@ -203,7 +203,7 @@ func (r *MitigationRuleReconciler) apply(mitigationRule *spikemitigationv1.Mitig
 	return nil
 }
 
-func getVirtualService(mitigationRule *spikemitigationv1.MitigationRule, gatewayName, host, hostInfoHeaderKey, authorization, optionalAuthorizationKey, optionalAuthorizationValue string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
+func getVirtualService(mitigationRule *api.BalancingRule, gatewayName, host, hostInfoHeaderKey, authorization, optionalAuthorizationKey, optionalAuthorizationValue string, internalWeight, externalWeight int) *v1alpha3.VirtualService {
 	spec := mitigationRule.Spec
 	internalHeader := map[string]string{hostInfoHeaderKey: host}
 	externalHeader := map[string]string{hostInfoHeaderKey: host}

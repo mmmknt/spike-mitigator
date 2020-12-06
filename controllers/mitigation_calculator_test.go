@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	v1 "github.com/mmmknt/spike-mitigation-operator/api/v1"
+	api "github.com/mmmknt/spike-mitigator/api/v1alpha1"
 )
 
 //TODO test for calculate
@@ -27,7 +27,7 @@ import (
 // 3. error cases
 
 func TestUnableToGetMetrics(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
@@ -46,7 +46,7 @@ func TestUnableToGetMetrics(t *testing.T) {
 }
 
 func TestFirstTimeOverMitigationTriggerRateAndGenerateSingleRoutingRule(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
@@ -76,7 +76,7 @@ func TestFirstTimeOverMitigationTriggerRateAndGenerateSingleRoutingRule(t *testi
 }
 
 func TestCurrentSingleRoutingRuleAndGenerateSameHostSingleRoutingRule(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
@@ -112,7 +112,7 @@ func TestCurrentSingleRoutingRuleAndGenerateSameHostSingleRoutingRule(t *testing
 }
 
 func TestCurrentSingleRoutingRuleAndGenerateDifferentSingleRoutingRule(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
@@ -148,7 +148,7 @@ func TestCurrentSingleRoutingRuleAndGenerateDifferentSingleRoutingRule(t *testin
 }
 
 func TestSufficientResourceAndRoutingRuleIsNotNeeded(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
@@ -183,7 +183,7 @@ func TestSufficientResourceAndRoutingRuleIsNotNeeded(t *testing.T) {
 }
 
 func TestFirstTimeOverMitigationTriggerRateAndGenerateMultiRoutingRules(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
@@ -218,7 +218,7 @@ func TestFirstTimeOverMitigationTriggerRateAndGenerateMultiRoutingRules(t *testi
 }
 
 func TestCurrentMultiRoutingRulesAndGenerateMultiRoutingRules(t *testing.T) {
-	spec := v1.MitigationRuleSpec{
+	spec := api.BalancingRuleSpec{
 		HPATriggerRate:        60,
 		MitigationTriggerRate: 80,
 	}
