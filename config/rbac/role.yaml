@@ -17,7 +17,9 @@ rules:
   resources:
   - secrets
   verbs:
+  - create
   - list
+  - update
   - watch
 - apiGroups:
   - loadbalancing.spike-mitigator.mmmknt.dev
