@@ -189,7 +189,7 @@ func (r *BalancingRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 		log.Error(err, "unable to get secret")
 		return ctrl.Result{RequeueAfter: reconcilePeriod}, nil
 	}
-	err = r.apply(balancingRule, currentRR, routingRule, hostInfoHeaderKey.value, balancingRule.Spec.GatewayName, authorization.getVersion(), oaKey.value, oaValue.value)
+	err = r.apply(balancingRule, currentRR, routingRule, hostInfoHeaderKey.value, balancingRule.Spec.GatewayName, authorization.getValue(), oaKey.value, oaValue.value)
 
 	// TODO make RequeueAfter to be able change per loop
 	return ctrl.Result{RequeueAfter: reconcilePeriod}, err
