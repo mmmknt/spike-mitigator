@@ -103,6 +103,7 @@ func main() {
 
 	if err = (&controllers.BalancingRuleReconciler{
 		Client:         mgr.GetClient(),
+		KubeClientSet:  kubeClientset,
 		IstioClientset: istioClientset,
 		Calculator:     calculator,
 		Log:            ctrl.Log.WithName("controllers").WithName("MitigationRule"),
