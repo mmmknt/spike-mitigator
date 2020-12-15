@@ -64,6 +64,7 @@ func TestFirstTimeOverMitigationTriggerRateAndGenerateSingleRoutingRule(t *testi
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-third"): {
+			Host:           Host("test-domain-third"),
 			InternalWeight: 58,
 			ExternalWeight: 42,
 			Version:        "",
@@ -100,6 +101,7 @@ func TestCurrentSingleRoutingRuleAndGenerateSameHostSingleRoutingRule(t *testing
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-second"): {
+			Host:           Host("test-domain-second"),
 			InternalWeight: 29,
 			ExternalWeight: 71,
 			Version:        "some-version",
@@ -136,6 +138,7 @@ func TestCurrentSingleRoutingRuleAndGenerateDifferentSingleRoutingRule(t *testin
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-third"): {
+			Host:           Host("test-domain-third"),
 			InternalWeight: 33,
 			ExternalWeight: 67,
 			Version:        "",
@@ -201,11 +204,13 @@ func TestFirstTimeOverMitigationTriggerRateAndGenerateMultiRoutingRules(t *testi
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-third"): {
+			Host:           Host("test-domain-third"),
 			InternalWeight: 1,
 			ExternalWeight: 99,
 			Version:        "",
 		},
 		Host("test-domain-second"): {
+			Host:           Host("test-domain-second"),
 			InternalWeight: 16,
 			ExternalWeight: 84,
 			Version:        "",
@@ -247,11 +252,13 @@ func TestCurrentMultiRoutingRulesAndGenerateMultiRoutingRules(t *testing.T) {
 
 	expected := &RoutingRule{RuleMap: map[Host]*RoutingRate{
 		Host("test-domain-fourth"): {
+			Host:           Host("test-domain-fourth"),
 			InternalWeight: 1,
 			ExternalWeight: 99,
 			Version:        "some-version",
 		},
 		Host("test-domain-third"): {
+			Host:           Host("test-domain-third"),
 			InternalWeight: 10,
 			ExternalWeight: 90,
 			Version:        "",

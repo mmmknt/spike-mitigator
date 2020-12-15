@@ -185,6 +185,7 @@ func calculate(spec api.BalancingRuleSpec, currentRule *RoutingRule, metrics *Me
 		}
 		dc = dc - externalCount
 		rate := &RoutingRate{
+			Host:           rc.Host,
 			InternalWeight: 100 - externalWeight,
 			ExternalWeight: externalWeight,
 		}
