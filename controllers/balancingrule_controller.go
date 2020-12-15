@@ -109,7 +109,7 @@ func (r *BalancingRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 				internalHost := item.ObjectMeta.GetLabels()["InternalHost"]
 				externalHost := item.ObjectMeta.GetLabels()["ExternalHost"]
 				spec := item.Spec
-				host := spec.GetHosts()[0]
+				host := Host(spec.GetHosts()[0])
 				var iw int32
 				var ew int32
 				for _, ri := range spec.GetHttp()[0].GetRoute() {
@@ -121,7 +121,8 @@ func (r *BalancingRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 						ew = dw
 					}
 				}
-				rm[Host(host)] = &RoutingRate{
+				rm[host] = &RoutingRate{
+					Host:           host,
 					InternalWeight: iw,
 					ExternalWeight: ew,
 					Version:        item.ObjectMeta.ResourceVersion,
