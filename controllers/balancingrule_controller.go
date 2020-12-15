@@ -134,8 +134,12 @@ func (r *BalancingRuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, erro
 	currentRR := &RoutingRule{RuleMap: rm}
 
 	routingRule, err := r.Calculator.Calculate(ctx, r.Log, currentRR, balancingRule.Spec)
-	log.Info("current", "routing rule", currentRR)
-	log.Info("latest", "routing rule", routingRule)
+	for _, v := range currentRR.RuleMap {
+		log.Info("current", "routing rule", v)
+	}
+	for _, v := range routingRule.RuleMap {
+		log.Info("latest", "routing rule", v)
+	}
 	if err != nil {
 		log.Error(err, "unable to calculate routing rule")
 		return ctrl.Result{RequeueAfter: reconcilePeriod}, nil
