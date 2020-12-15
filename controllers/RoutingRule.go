@@ -7,6 +7,7 @@ type RoutingRule struct {
 }
 
 func (rr *RoutingRule) Add(host Host, re *RoutingRate) {
+	re.Host = host
 	rr.RuleMap[host] = re
 }
 
@@ -22,6 +23,8 @@ func (rr *RoutingRule) Equal(target *RoutingRule) bool {
 }
 
 type RoutingRate struct {
+	// Host is only used for logging
+	Host           Host   `json:"host"`
 	InternalWeight int32  `json:"internalWeight"`
 	ExternalWeight int32  `json:"externalWeight"`
 	Version        string `json:"version"`
