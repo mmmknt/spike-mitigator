@@ -143,7 +143,7 @@ func (c *MitigationCalculator) getMetrics(ctx context.Context, log logr.Logger, 
 
 func calculate(spec api.BalancingRuleSpec, currentRule *RoutingRule, metrics *Metrics, maxCPUUtilizationPercentage int32) (*RoutingRule, error) {
 	if metrics == nil {
-		return currentRule, nil
+		return &RoutingRule{RuleMap: map[Host]*RoutingRate{}}, nil
 	}
 
 	receivableRequestCount := metrics.TotalRequestCount * (float64(spec.MitigationTriggerRate+spec.HPATriggerRate) / 2) / float64(maxCPUUtilizationPercentage)
