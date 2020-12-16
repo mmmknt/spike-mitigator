@@ -42,7 +42,7 @@ func TestUnableToGetMetrics(t *testing.T) {
 
 	routingRule, err := calculate(spec, rule, nil, maxCurrentCPUUtilizationPercentage)
 	assert.NoError(t, err)
-	assert.Equal(t, rule, routingRule)
+	assert.Equal(t, &RoutingRule{RuleMap: map[Host]*RoutingRate{}}, routingRule)
 }
 
 func TestFirstTimeOverMitigationTriggerRateAndGenerateSingleRoutingRule(t *testing.T) {
