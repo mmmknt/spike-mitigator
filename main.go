@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/DataDog/datadog-api-client-go/api/v1/datadog"
@@ -30,6 +31,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -75,17 +77,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	restConfig, err := rest.InClusterConfig()
+	config, err := rest.InClusterConfig()
 	if err != nil {
-		setupLog.Error(err, "unable to get InClusterConfig")
-		os.Exit(1)
+		kubeconfig := filepath.Join("~", ".kube", "config")
+		if envvar := os.Getenv("KUBECONFIG"); len(envvar) > 0 {
+			kubeconfig = envvar
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			setupLog.Error(err, "unable to load kubeconfig")
+			os.Exit(1)
+		}
 	}
-	istioClientset, err := istiocli.NewForConfig(restConfig)
+	istioClientset, err := istiocli.NewForConfig(config)
 	if err != nil {
 		setupLog.Error(err, "unable to create istio Clientset")
 		os.Exit(1)
 	}
-	kubeClientset, err := kubernetes.NewForConfig(restConfig)
+	kubeClientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		setupLog.Error(err, "unable to create kubernetes Clientset")
 		os.Exit(1)
